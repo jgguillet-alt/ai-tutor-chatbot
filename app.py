@@ -7,7 +7,7 @@ st.set_page_config(
     page_title="PLATFORM - AI Tutor",
     page_icon="https://em-content.zobj.net/source/apple/391/robot_1f916.png",
     layout="centered",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 # --- Init State ---
