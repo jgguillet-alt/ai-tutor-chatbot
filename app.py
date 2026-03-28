@@ -7,7 +7,7 @@ st.set_page_config(
     page_title="PLATFORM - AI Tutor",
     page_icon="https://em-content.zobj.net/source/apple/391/robot_1f916.png",
     layout="centered",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 # --- Init State ---
@@ -654,6 +654,26 @@ st.markdown("""
     .q-card h3 { color: var(--accent-lime); font-size: 0.8rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; }
     .q-card p { color: var(--text-primary); font-size: 1.1rem; font-weight: 600; }
 
+    /* Quick topics chips */
+    .quick-topics { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.8rem 0; }
+    .quick-topics button {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 20px !important;
+        color: var(--text-muted) !important;
+        font-size: 0.8rem !important;
+        padding: 0.4rem 0.9rem !important;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+        white-space: nowrap;
+    }
+    .quick-topics button:hover {
+        border-color: var(--accent-lime) !important;
+        color: var(--accent-lime) !important;
+        box-shadow: 0 0 10px rgba(200,255,0,0.1) !important;
+    }
+
     /* Download button style */
     .stDownloadButton > button {
         background: linear-gradient(135deg, var(--accent-lime), var(--accent-cyan)) !important;
@@ -767,23 +787,13 @@ TEACHING STYLE:
 - Format with markdown for readability
 """
 
-# --- Sidebar ---
+# --- Sidebar (API key fallback only) ---
 with st.sidebar:
     if not api_key:
         st.markdown("### Setup")
         api_key = st.text_input("API Key", type="password", placeholder="sk-ant-...")
         if not api_key:
             st.warning("API key required")
-        st.divider()
-
-    st.markdown(f"### {t('sidebar_topics_title')}")
-    topics = T["sidebar_topics"][lang]
-    for topic in topics:
-        if st.button(topic, key=f"topic_{topic}", use_container_width=True):
-            st.session_state.mode = "chat"
-            st.session_state.messages.append({"role": "user", "content": topic})
-            st.rerun()
-    st.divider()
     st.markdown("<p style='color:#8888aa;font-size:0.75rem;'>PLATFORM<br>Station F, Paris</p>", unsafe_allow_html=True)
 
 # --- Mode Switcher Buttons ---
@@ -829,6 +839,18 @@ st.markdown('<div class="glow-line"></div>', unsafe_allow_html=True)
 # MODE: AI TUTOR CHAT
 # ===========================
 if st.session_state.mode == "chat":
+    # Quick topic buttons (visible on mobile)
+    if not st.session_state.messages:
+        st.markdown(f"<p style='color:#8888aa; font-size:0.8rem; margin-bottom:0.3rem;'>{t('sidebar_topics_title')}</p>", unsafe_allow_html=True)
+        topics = T["sidebar_topics"][lang]
+        topic_cols = st.columns(2)
+        for i, topic in enumerate(topics):
+            with topic_cols[i % 2]:
+                if st.button(topic, key=f"topic_{topic}", use_container_width=True):
+                    st.session_state.messages.append({"role": "user", "content": topic})
+                    st.rerun()
+        st.markdown('<div class="glow-line"></div>', unsafe_allow_html=True)
+
     for msg in st.session_state.messages:
         role_avatar = "https://em-content.zobj.net/source/apple/391/woman-student_1f469-200d-1f393.png" if msg["role"] == "user" else "https://em-content.zobj.net/source/apple/391/robot_1f916.png"
         with st.chat_message(msg["role"], avatar=role_avatar):
