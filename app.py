@@ -10,6 +10,10 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+# --- Security Limits ---
+MAX_MESSAGES = 30       # Max chat messages per session
+MAX_PROGRAMS = 3        # Max program generations per session
+
 # --- Init State ---
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -25,8 +29,37 @@ if "program_result" not in st.session_state:
     st.session_state.program_result = None
 if "program_pdf" not in st.session_state:
     st.session_state.program_pdf = None
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+if "msg_count" not in st.session_state:
+    st.session_state.msg_count = 0
+if "program_count" not in st.session_state:
+    st.session_state.program_count = 0
 
 lang = st.session_state.lang
+
+# --- Access Gate ---
+ACCESS_CODE = st.secrets.get("ACCESS_CODE", "")
+if ACCESS_CODE and not st.session_state.authenticated:
+    st.markdown("""
+    <style>
+        .stApp { background: #0a0a0f !important; }
+        #MainMenu, footer, header { visibility: hidden; }
+    </style>
+    <div style="text-align:center; padding-top:4rem;">
+        <div style="font-size:0.75rem; font-weight:700; letter-spacing:0.4em; color:#c8ff00; text-transform:uppercase; margin-bottom:0.5rem;">P L A T F O R M</div>
+        <h1 style="font-size:2rem; font-weight:900; color:#f0f0f5; margin:0;">AI Tutor</h1>
+        <p style="color:#8888aa; margin-top:0.5rem;">Entrez le code d'accès pour continuer</p>
+    </div>
+    """, unsafe_allow_html=True)
+    code_input = st.text_input("Code d'accès", type="password", placeholder="Entrez le code...")
+    if st.button("Valider", use_container_width=True):
+        if code_input == ACCESS_CODE:
+            st.session_state.authenticated = True
+            st.rerun()
+        else:
+            st.error("Code incorrect.")
+    st.stop()
 
 # ==============================
 # TRANSLATIONS
@@ -149,6 +182,16 @@ T = {
         "en": "My_Platform_AI_Program.pdf",
         "fr": "Mon_Programme_IA_Platform.pdf",
         "es": "Mi_Programa_IA_Platform.pdf",
+    },
+    "limit_reached": {
+        "en": "You've reached the message limit for this session (30 messages). Refresh the page to start a new session.",
+        "fr": "Vous avez atteint la limite de messages pour cette session (30 messages). Rafraîchissez la page pour une nouvelle session.",
+        "es": "Has alcanzado el límite de mensajes para esta sesión (30 mensajes). Recarga la página para una nueva sesión.",
+    },
+    "program_limit_reached": {
+        "en": "You've reached the program generation limit for this session (3 programs). Refresh the page to start a new session.",
+        "fr": "Vous avez atteint la limite de génération de programmes pour cette session (3 programmes). Rafraîchissez la page pour une nouvelle session.",
+        "es": "Has alcanzado el límite de generación de programas para esta sesión (3 programas). Recarga la página para una nueva sesión.",
     },
 }
 
@@ -858,12 +901,16 @@ if st.session_state.mode == "chat":
 
     if not api_key:
         st.chat_input(t("chat_no_key"), disabled=True)
+    elif st.session_state.msg_count >= MAX_MESSAGES:
+        st.warning(t("limit_reached"))
+        st.chat_input(t("limit_reached"), disabled=True)
     elif prompt := st.chat_input(t("chat_placeholder")):
         st.session_state.messages.append({"role": "user", "content": prompt})
+        st.session_state.msg_count += 1
         with st.chat_message("user", avatar="https://em-content.zobj.net/source/apple/391/woman-student_1f469-200d-1f393.png"):
             st.markdown(prompt)
 
-    if api_key and st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
+    if api_key and st.session_state.msg_count <= MAX_MESSAGES and st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
         client = Anthropic(api_key=api_key)
         with st.chat_message("assistant", avatar="https://em-content.zobj.net/source/apple/391/robot_1f916.png"):
             with st.spinner(""):
@@ -950,6 +997,8 @@ if st.session_state.mode == "program":
     elif step >= len(questions) and not st.session_state.program_result:
         if not api_key:
             st.error(t("no_key_error"))
+        elif st.session_state.program_count >= MAX_PROGRAMS:
+            st.warning(t("program_limit_reached"))
         else:
             with st.spinner(t("generating")):
                 answers = st.session_state.program_answers
@@ -998,6 +1047,7 @@ PLATFORM — Station F, Paris — platform-school.com"""
                 )
                 st.session_state.program_result = response.content[0].text
                 st.session_state.program_pdf = None
+                st.session_state.program_count += 1
                 st.rerun()
 
 # --- Bottom branding ---
