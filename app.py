@@ -29,37 +29,12 @@ if "program_result" not in st.session_state:
     st.session_state.program_result = None
 if "program_pdf" not in st.session_state:
     st.session_state.program_pdf = None
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
 if "msg_count" not in st.session_state:
     st.session_state.msg_count = 0
 if "program_count" not in st.session_state:
     st.session_state.program_count = 0
 
 lang = st.session_state.lang
-
-# --- Access Gate ---
-ACCESS_CODE = st.secrets.get("ACCESS_CODE", "")
-if ACCESS_CODE and not st.session_state.authenticated:
-    st.markdown("""
-    <style>
-        .stApp { background: #0a0a0f !important; }
-        #MainMenu, footer, header { visibility: hidden; }
-    </style>
-    <div style="text-align:center; padding-top:4rem;">
-        <div style="font-size:0.75rem; font-weight:700; letter-spacing:0.4em; color:#c8ff00; text-transform:uppercase; margin-bottom:0.5rem;">P L A T F O R M</div>
-        <h1 style="font-size:2rem; font-weight:900; color:#f0f0f5; margin:0;">AI Tutor</h1>
-        <p style="color:#8888aa; margin-top:0.5rem;">Entrez le code d'accès pour continuer</p>
-    </div>
-    """, unsafe_allow_html=True)
-    code_input = st.text_input("Code d'accès", type="password", placeholder="Entrez le code...")
-    if st.button("Valider", use_container_width=True):
-        if code_input == ACCESS_CODE:
-            st.session_state.authenticated = True
-            st.rerun()
-        else:
-            st.error("Code incorrect.")
-    st.stop()
 
 # ==============================
 # TRANSLATIONS
